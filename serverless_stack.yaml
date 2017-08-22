@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Parameters: 
+  LambdaExecutionRole: 
+    Type: String
+    Description: ARN of Lambda Execution Role
+  KMSKey: 
+    Type: String    
+    Description: ARN of KMS Key
+Resources:
+  ComplianceFunc:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Description: AWS CIS Foundation Framework Compliance
+      Handler: aws-cis-foundation-benchmark-checklist.lambda_handler
+      Runtime: python2.7
+      MemorySize: 512
+      Timeout: 300
+      CodeUri: code/
+      Role: !Ref LambdaExecutionRole
+      KmsKeyArn: !Ref KMSKey"
+  ComplianceEvent: 
+    Type: "AWS::Events::Rule"
+    Properties: 
+      Description: "Scheduled Compliance Check"
+      ScheduleExpression: "rate(1 hour)"
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "ComplianceFunc"
+              - "Arn"
+          Id: "TargetFunctionV1"
+  ComplianceEventPermission: 
+    Type: "AWS::Lambda::Permission"
+    Properties: 
+      FunctionName: 
+        Ref: "ComplianceFunc"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "ComplianceEvent"
+          - "Arn"
