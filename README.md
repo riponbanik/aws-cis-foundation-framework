@@ -3,6 +3,8 @@ Cloudformation template and compliance check python script. Modified AWS Provide
 
 Added SAM template for creating Lambda Function and Cloudwatch Event Rule to schedule run every hour (default). Modify the lambda function to run the compliance check according to your schedule.
 
+Create LambdaExuction Role and KMS Key and provide the arn when creating lambda function below.
+
 ## Execution Steps
 
 1.Create Cloudwatch Metric Filters and Alarms 
