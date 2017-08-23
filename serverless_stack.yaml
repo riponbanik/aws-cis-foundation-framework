@@ -7,6 +7,15 @@ Parameters:
   KMSKey: 
     Type: String    
     Description: ARN of KMS Key
+  s3BucketName:
+    Type: String    
+    Description: Name of S3 Bucket to Save Report to        
+  snsTopicName:
+    Type: String    
+    Description: SNS Topic name to subscribe to    
+  notificationEmail:  
+    Type: String    
+    Description: Send notification to email provided
 Resources:
   ComplianceFunc:
     Type: 'AWS::Serverless::Function'
@@ -14,32 +23,43 @@ Resources:
       Description: AWS CIS Foundation Framework Compliance
       Handler: aws-cis-foundation-benchmark-checklist.lambda_handler
       Runtime: python2.7
-      MemorySize: 512
+      MemorySize: 128
       Timeout: 300
       CodeUri: code/
       Role: !Ref LambdaExecutionRole
-      KmsKeyArn: !Ref KMSKey"
-  ComplianceEvent: 
-    Type: "AWS::Events::Rule"
-    Properties: 
-      Description: "Scheduled Compliance Check"
-      ScheduleExpression: "rate(1 hour)"
-      State: "ENABLED"
-      Targets: 
-        - 
-          Arn: 
-            Fn::GetAtt: 
-              - "ComplianceFunc"
-              - "Arn"
-          Id: "TargetFunctionV1"
-  ComplianceEventPermission: 
+      KmsKeyArn: !Ref KMSKey
+  ConfigPermissionToCallLambda: 
     Type: "AWS::Lambda::Permission"
     Properties: 
       FunctionName: 
-        Ref: "ComplianceFunc"
-      Action: "lambda:InvokeFunction"
-      Principal: "events.amazonaws.com"
-      SourceArn: 
         Fn::GetAtt: 
-          - "ComplianceEvent"
-          - "Arn"
+          - ComplianceFunc
+          - Arn
+      Action: "lambda:InvokeFunction"
+      Principal: "config.amazonaws.com"
+  ComplianceConfigRule: 
+    Type: "AWS::Config::ConfigRule"
+    Properties: 
+      ConfigRuleName: cis_compliance_check
+      Description: Checks Compliance with AWS CIS Foundation Framework
+      InputParameters: 
+        s3BucketName: !Ref s3BucketName
+        snsTopicArn: !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${snsTopicName}
+      Source: 
+        Owner: CUSTOM_LAMBDA
+        SourceIdentifier: 
+          Fn::GetAtt: 
+            - ComplianceFunc
+            - Arn
+        SourceDetails: 
+        - 
+          EventSource: "aws.config"
+          MaximumExecutionFrequency: TwentyFour_Hours
+          MessageType: "ScheduledNotification"
+    DependsOn: ConfigPermissionToCallLambda
+  ComplianceEmailNotification: 
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !Ref notificationEmail
+      Protocol: email
+      TopicArn: !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${snsTopicName}
