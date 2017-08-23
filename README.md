@@ -22,8 +22,9 @@ aws cloudformation package --template-file serverless_stack.yaml --output-templa
 aws cloudformation deploy --template-file serverless_stack_deploy.yaml --stack-name cis-compliance-check --parameter-overrides  LambdaExecutionRole=*RoleArn* KMSKey=*KeyArn*
 
 
-3.Invoke Lambda Function
+3.Invoke Lambda Function (optional)
 
+Invoke the following command to invoke lambda function to test the functionality. To test from AWS Config Click on Re-evaluate on the rule created
 
 aws lambda invoke --function-name **function_name_created_above** *output_filename*
 
