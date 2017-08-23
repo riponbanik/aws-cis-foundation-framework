@@ -26,9 +26,13 @@ aws cloudformation deploy --template-file serverless_stack_deploy.yaml --stack-n
 
 3.Invoke Lambda Function (optional)
 
-Invoke the following command to invoke lambda function to test the functionality. To test from AWS Config Click on Re-evaluate on the rule created
+Invoke the following command to invoke lambda function to test the functionality - 
 
 aws lambda invoke --function-name **function_name_created_above** *output_filename*
+
+To evaluate the rule from AWS Config run the following command -
+
+aws configservice start-config-rules-evaluation --config-rule-names cis_compliance_check
 
 
 ### References
